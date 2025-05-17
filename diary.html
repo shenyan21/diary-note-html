@@ -1,0 +1,1199 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <title>我的日记</title>
+  <style>
+    /* 设置body的背景：无默认图片，仅设置颜色 */
+    body {
+      position: relative;
+      background-color: #f0f2f5;
+      margin: 0;
+      padding: 20px;
+    }
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      font-family: "Microsoft YaHei", sans-serif;
+    }
+    /* 让页面左右布局：左侧日记，右侧便签 */
+    .main-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      gap: 20px;
+    }
+    /* 日记区域容器 */
+    .diary-container {
+      flex: 1 1 auto;
+      max-width: 65%;
+    }
+    /* 日记区域头部 */
+    #diaryHeader {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    #diaryHeader h2 {
+      font-size: 24px;
+      color: #333;
+    }
+    /* 便签区域容器 */
+    .notes-container {
+      flex: 0 0 30%;
+      background-color: rgba(255, 255, 255, 0.9);
+      padding: 15px;
+      border-radius: 6px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      max-height: calc(100vh - 40px);
+      overflow-y: auto;
+    }
+    .notes-container h2 {
+      font-size: 20px;
+      margin-bottom: 10px;
+      text-align: center;
+    }
+    /* 日记列表整体容器 */
+    .diary-list {
+      list-style: none;
+      padding: 0;
+    }
+    /* 日记条目 */
+    .diary-item {
+      background-color: #fff;
+      margin-bottom: 20px;
+      padding: 15px;
+      border-radius: 6px;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+      transition: 0.3s all;
+      cursor: pointer;
+      opacity: 0.7;
+    }
+    .diary-item:hover {
+      box-shadow: 0 3px 8px rgba(0,0,0,0.15);
+    }
+    .diary-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .diary-title {
+      font-size: 18px;
+      font-weight: bold;
+      color: #333;
+      margin-right: 10px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+      max-width: 70%;
+    }
+    .diary-time {
+      font-size: 14px;
+      color: #999;
+      white-space: nowrap;
+    }
+    .diary-preview {
+      color: #666;
+      font-size: 14px;
+      line-height: 1.6;
+      max-height: 2.4em;
+      overflow: hidden;
+      white-space: nowrap;
+      text-overflow: ellipsis;
+    }
+    /* 新建日记的加号按钮 */
+    .add-button {
+      position: fixed;
+      right: 30px;
+      bottom: 30px;
+      width: 50px;
+      height: 50px;
+      border-radius: 50%;
+      background-color: #007bff;
+      color: #fff;
+      font-size: 30px;
+      text-align: center;
+      line-height: 50px;
+      cursor: pointer;
+      box-shadow: 0 2px 5px rgba(0,0,0,0.2);
+    }
+    .add-button:hover {
+      background-color: #0056b3;
+    }
+    /* 日记备份操作区域 */
+    #backupActions {
+      display: flex;
+      gap: 10px;
+    }
+    #backupActions button {
+      padding: 10px 20px;
+      font-size: 14px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      background-color: #28a745;
+      color: #fff;
+    }
+    #backupActions button:hover {
+      background-color: #218838;
+    }
+    #bgImageBtn {
+      background-color: #007bff;
+    }
+    #bgImageBtn:hover {
+      background-color: #0056b3;
+    }
+    /* 新建/修改日记对话框背景 */
+    .modal-background {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.4);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+    }
+    /* 新建/修改日记的对话框内容 */
+    .modal {
+      background-color: #fff;
+      padding: 20px;
+      width: 90%;
+      max-width: 500px;
+      border-radius: 6px;
+      position: relative;
+    }
+    .modal h2 {
+      margin-bottom: 10px;
+      font-size: 20px;
+    }
+    .modal label {
+      display: block;
+      margin-top: 10px;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    .modal input[type="text"],
+    .modal textarea,
+    .modal input[type="datetime-local"],
+    .modal input[type="file"] {
+      width: 100%;
+      padding: 8px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    .modal textarea {
+      resize: vertical;
+      min-height: 80_roses: px;
+    }
+    .modal img {
+      max-width: 100%;
+      margin-top: 10px;
+      display: none;
+    }
+    .delete-image-btn {
+      display: none;
+      padding: 10px 20px;
+      font-size: 14px;
+      border: none;
+      border-radius: 4px;
+      background-color: #dc3545;
+      color: #fff;
+      cursor: pointer;
+    }
+    .delete-image-btn:hover {
+      background-color: #b52a36;
+    }
+    .modal-actions {
+      display: flex;
+      gap: 10px;
+      margin-top: 20px;
+    }
+    .cancel-btn, .save-btn {
+      padding: 10px 20px;
+      font-size: 14px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .cancel-btn {
+      background-color: #bbb;
+      color: #fff;
+    }
+    .save-btn {
+      background-color: #007bff;
+      color: #fff;
+    }
+    .save-btn:hover {
+      background-color: #0056b3;
+    }
+    .close-modal {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 20px;
+      color: #999;
+      cursor: pointer;
+    }
+    .close-modal:hover {
+      color: #666;
+    }
+    /* 背景图片设置模态框 */
+    #bgImageModal {
+      max-width: 400px;
+    }
+    #bgImagePreview {
+      max-height: 200px;
+      object-fit: contain;
+    }
+    #bgOpacitySlider {
+      width: 100%;
+      margin-top: 10px;
+    }
+    #bgOpacityValue {
+      font-size: 14px;
+      margin-left: 10px;
+    }
+    /* 日记详情弹层 */
+    .detail-modal-background {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.4);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+    }
+    .detail-modal {
+      background-color: #fff;
+      width: 800px;
+      max-height: 90%;
+      position: relative;
+      overflow-y: auto;
+      padding: 30px;
+      border-radius: 6px;
+    }
+    .detail-title {
+      font-size: 24px;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    .detail-time {
+      font-size: 16px;
+      color: #999;
+      margin-bottom: 20px;
+    }
+    .detail-content {
+      font-size: 16px;
+      line-height: 1.8;
+      color: #444;
+      white-space: pre-wrap;
+    }
+    .detail-image {
+      display: none;
+      margin: 20px auto;
+      width: 700px;
+    }
+    .detail-actions {
+      margin-top: 30px;
+      text-align: center;
+    }
+    .detail-actions button {
+      margin: 0 10px;
+      padding: 10px 20px;
+      font-size: 14px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .edit-btn {
+      background-color: #007bff;
+      color: #fff;
+    }
+    .edit-btn:hover {
+      background-color: #0056b3;
+    }
+    .delete-btn {
+      background-color: #dc3545;
+      color: #fff;
+    }
+    .delete-btn:hover {
+      background-color: #b52a36;
+    }
+    .close-detail-modal {
+      position: absolute;
+      top: 20px;
+      right: 20px;
+      font-size: 24px;
+      color: #999;
+      cursor: pointer;
+    }
+    .close-detail-modal:hover {
+      color: #666;
+    }
+    /* 便签功能相关 */
+    .notes-actions {
+      text-align: center;
+      margin-bottom: 10px;
+    }
+    .notes-actions button {
+      padding: 8px 16px;
+      font-size: 14px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin: 0 5px;
+      background-color: #007bff;
+      color: #fff;
+    }
+    .notes-actions button:hover {
+      background-color: #0056b3;
+    }
+    .notes-export-btn {
+      background-color: #28a745;
+      margin-left: 5px;
+    }
+    .notes-export-btn:hover {
+      background-color: #218838;
+    }
+    .notes-table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    .notes-table th, .notes-table td {
+      border-bottom: 1px solid #ddd;
+      padding: 8px;
+    }
+    .notes-table tr:hover {
+      background-color: #f5f5f5;
+      cursor: pointer;
+    }
+    .notes-table th {
+      background-color: #f0f0f0;
+    }
+    /* 便签编辑弹窗 */
+    #noteModalBackground {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.4);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+    }
+    #noteModal {
+      background-color: #fff;
+      padding: 20px;
+      width: 90%;
+      max-width: 400px;
+      border-radius: 6px;
+      position: relative;
+    }
+    #noteModal h2 {
+      margin-bottom: 10px;
+      font-size: 20px;
+    }
+    #noteModal label {
+      display: block;
+      margin-top: 10px;
+      margin-bottom: 5px;
+      font-weight: bold;
+    }
+    #noteModal input[type="text"],
+    #noteModal textarea {
+      width: 100%;
+      padding: 8px;
+      font-size: 14px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    #noteModal textarea {
+      resize: vertical;
+      min-height: 60px;
+    }
+    #closeNoteModalBtn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 20px;
+      color: #999;
+      cursor: pointer;
+    }
+    #closeNoteModalBtn:hover {
+      color: #666;
+    }
+    .note-modal-actions {
+      margin-top: 20px;
+      text-align: right;
+    }
+    .note-modal-actions button {
+      padding: 8px 16px;
+      font-size: 14px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      margin-left: 10px;
+    }
+    .cancel-note-btn {
+      background-color: #bbb;
+      color: #fff;
+    }
+    .save-note-btn {
+      background-color: #007bff;
+      color: #fff;
+    }
+    .save-note-btn:hover {
+      background-color: #0056b3;
+    }
+    /* 便签详情弹窗 */
+    .detail-modal-background#noteDetailModalBackground {
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0,0,0,0.4);
+      display: none;
+      justify-content: center;
+      align-items: center;
+      z-index: 999;
+    }
+    .detail-modal#noteDetailModal {
+      background-color: #fff;
+      width: 500px;
+      max-height: 90%;
+      position: relative;
+      overflow-y: auto;
+      padding: 20px;
+      border-radius: 6px;
+    }
+    .detail-modal#noteDetailModal .detail-title {
+      font-size: 20px;
+      font-weight: bold;
+      margin-bottom: 10px;
+    }
+    .detail-modal#noteDetailModal .detail-content {
+      font-size: 14px;
+      line-height: 1.8;
+      color: #444;
+      white-space: pre-wrap;
+    }
+    .close-detail-modal#closeNoteDetailModalBtn {
+      position: absolute;
+      top: 10px;
+      right: 10px;
+      font-size: 20px;
+      color: #999;
+      cursor: pointer;
+    }
+    .close-detail-modal#closeNoteDetailModalBtn:hover {
+      color: #666;
+    }
+    .detail-actions#noteDetailActions {
+      margin-top: 20px;
+      text-align: center;
+    }
+    .detail-actions#noteDetailActions button {
+      margin: 0 10px;
+      padding: 8px 16px;
+      font-size: 14px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+    }
+    .detail-actions#noteDetailActions .edit-btn {
+      background-color: #007bff;
+      color: #fff;
+    }
+    .detail-actions#noteDetailActions .edit-btn:hover {
+      background-color: #0056b3;
+    }
+    .detail-actions#noteDetailActions .delete-btn {
+      background-color: #dc3545;
+      color: #fff;
+    }
+    .detail-actions#noteDetailActions .delete-btn:hover {
+      background-color: #b52a36;
+    }
+  </style>
+</head>
+<body>
+  <!-- 动态背景图片容器 -->
+  <div id="bgImageContainer" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; z-index: -1;"></div>
+
+  <!-- 主体内容：左侧日记 + 右侧便签 -->
+  <div class="main-content">
+    <!-- 日记区域 -->
+    <div class="diary-container">
+      <!-- 日记标识及按钮 -->
+      <div id="diaryHeader">
+        <h2>我的日记</h2>
+        <div id="backupActions">
+          <button id="bgImageBtn">背景图片</button>
+          <button id="exportBtn">导出日记</button>
+          <button id="importBtn">导入日记</button>
+          <input type="file" id="importFile" accept="application/json" style="display:none;">
+        </div>
+      </div>
+      <ul class="diary-list" id="diaryList"></ul>
+    </div>
+
+    <!-- 便签区域 -->
+    <div class="notes-container">
+      <h2>备忘录</h2>
+      <div class="notes-actions">
+        <button id="addNoteBtn">新增便签</button>
+        <button id="exportNotesBtn" class="notes-export-btn">导出便签</button>
+        <button id="importNotesBtn" class="notes-export-btn">导入便签</button>
+        <input type="file" id="importNotesFile" accept="application/json" style="display:none;">
+      </div>
+      <table class="notes-table" id="notesTable">
+        <thead>
+          <tr>
+            <th>标题</th>
+          </tr>
+        </thead>
+        <tbody id="notesTbody"></tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- 加号按钮：新建日记 -->
+  <div class="add-button" id="addButton">+</div>
+
+  <!-- 新建/修改日记对话框 -->
+  <div class="modal-background" id="modalBackground">
+    <div class="modal">
+      <span class="close-modal" id="closeModalBtn">×</span>
+      <h2 id="modalTitle">新建日记</h2>
+      <label for="diaryTitle">日记标题</label>
+      <input type="text" id="diaryTitle" placeholder="请输入日记标题" />
+      <label for="diaryDateTime">日记时间</label>
+      <input type="datetime-local" id="diaryDateTime" />
+      <label for="diaryContent">日记内容</label>
+      <textarea id="diaryContent" placeholder="支持文字、链接等"></textarea>
+      <label for="diaryImage">日记图片（可选）</label>
+      <input type="file" id="diaryImage" accept="image/*">
+      <img id="diaryImagePreview">
+      <div class="modal-actions" id="modalActions">
+        <button class="cancel-btn" id="cancelBtn">取消</button>
+        <button class="save-btn" id="saveBtn">保存</button>
+        <button type="button" class="delete-image-btn" id="deleteImageBtn">删除图片</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 日记详情弹层 -->
+  <div class="detail-modal-background" id="detailModalBackground">
+    <div class="detail-modal" id="detailModal">
+      <span class="close-detail-modal" id="closeDetailModalBtn">×</span>
+      <h2 class="detail-title" id="detailTitle"></h2>
+      <div class="detail-time" id="detailTime"></div>
+      <div class="detail-content" id="detailContent"></div>
+      <img id="detailImage" class="detail-image">
+      <div class="detail-actions">
+        <button class="edit-btn" id="editBtn">修改</button>
+        <button class="delete-btn" id="deleteBtn">删除</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 背景图片设置对话框 -->
+  <div class="modal-background" id="bgImageModalBackground">
+    <div class="modal" id="bgImageModal">
+      <span class="close-modal" id="closeBgImageModalBtn">×</span>
+      <h2>设置背景图片</h2>
+      <label for="bgImageInput">上传背景图片</label>
+      <input type="file" id="bgImageInput" accept="image/*">
+      <img id="bgImagePreview">
+      <label for="bgOpacitySlider">透明度</label>
+      <div style="display: flex; align-items: center;">
+        <input type="range" id="bgOpacitySlider" min="0" max="1" step="0.1" value="1">
+        <span id="bgOpacityValue">1.0</span>
+      </div>
+      <div class="modal-actions">
+        <button class="cancel-btn" id="cancelBgImageBtn">取消</button>
+        <button class="save-btn" id="saveBgImageBtn">保存</button>
+        <button class="delete-image-btn" id="deleteBgImageBtn" style="display: none;">删除图片</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 便签编辑弹窗 -->
+  <div class="modal-background" id="noteModalBackground">
+    <div class="modal" id="noteModal">
+      <span class="close-modal" id="closeNoteModalBtn">×</span>
+      <h2 id="noteModalTitle">新增便签</h2>
+      <label for="noteTitle">便签标题</label>
+      <input type="text" id="noteTitle" placeholder="请输入便签标题" />
+      <label for="noteContent">便签内容</label>
+      <textarea id="noteContent" placeholder="在此输入便签内容"></textarea>
+      <div class="note-modal-actions">
+        <button class="cancel-note-btn" id="cancelNoteBtn">取消</button>
+        <button class="save-note-btn" id="saveNoteBtn">保存</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 便签详情弹窗 -->
+  <div class="detail-modal-background" id="noteDetailModalBackground">
+    <div class="detail-modal" id="noteDetailModal">
+      <span class="close-detail-modal" id="closeNoteDetailModalBtn">×</span>
+      <h2 class="detail-title" id="noteDetailTitle"></h2>
+      <div class="detail-content" id="noteDetailContent"></div>
+      <div class="detail-actions" id="noteDetailActions">
+        <button class="edit-btn" id="editNoteBtn">修改</button>
+        <button class="delete-btn" id="deleteNoteBtn">删除</button>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    /****************** 日记部分 ******************/
+    // DOM元素（日记相关）
+    const diaryList = document.getElementById('diaryList');
+    const addButton = document.getElementById('addButton');
+    const modalBackground = document.getElementById('modalBackground');
+    const modalTitle = document.getElementById('modalTitle');
+    const closeModalBtn = document.getElementById('closeModalBtn');
+    const cancelBtn = document.getElementById('cancelBtn');
+    const saveBtn = document.getElementById('saveBtn');
+    const modalActions = document.getElementById('modalActions');
+    const diaryTitleInput = document.getElementById('diaryTitle');
+    const diaryDateTimeInput = document.getElementById('diaryDateTime');
+    const diaryContentInput = document.getElementById('diaryContent');
+    const diaryImageInput = document.getElementById('diaryImage');
+    const diaryImagePreview = document.getElementById('diaryImagePreview');
+    const deleteImageBtn = document.getElementById('deleteImageBtn');
+    const detailModalBackground = document.getElementById('detailModalBackground');
+    const detailModal = document.getElementById('detailModal');
+    const closeDetailModalBtn = document.getElementById('closeDetailModalBtn');
+    const detailTitle = document.getElementById('detailTitle');
+    const detailTime = document.getElementById('detailTime');
+    const detailContent = document.getElementById('detailContent');
+    const detailImage = document.getElementById('detailImage');
+    const editBtn = document.getElementById('editBtn');
+    const deleteBtn = document.getElementById('deleteBtn');
+
+    // 日记导入/导出相关
+    const exportBtn = document.getElementById('exportBtn');
+    const importBtn = document.getElementById('importBtn');
+    const importFile = document.getElementById('importFile');
+
+    // 背景图片相关
+    const bgImageBtn = document.getElementById('bgImageBtn');
+    const bgImageModalBackground = document.getElementById('bgImageModalBackground');
+    const closeBgImageModalBtn = document.getElementById('closeBgImageModalBtn');
+    const cancelBgImageBtn = document.getElementById('cancelBgImageBtn');
+    const saveBgImageBtn = document.getElementById('saveBgImageBtn');
+    const deleteBgImageBtn = document.getElementById('deleteBgImageBtn');
+    const bgImageInput = document.getElementById('bgImageInput');
+    const bgImagePreview = document.getElementById('bgImagePreview');
+    const bgOpacitySlider = document.getElementById('bgOpacitySlider');
+    const bgOpacityValue = document.getElementById('bgOpacityValue');
+    const bgImageContainer = document.getElementById('bgImageContainer');
+
+    // 存储日记数据
+    let diaryData = JSON.parse(localStorage.getItem('myDiary')) || [];
+    let currentDiaryIndex = -1;
+    let diaryImageData = "";
+
+    // 存储背景图片设置
+    let bgSettings = JSON.parse(localStorage.getItem('bgSettings')) || {
+      image: '',
+      opacity: 1
+    };
+
+    // 初始化页面状态
+    function initializePage() {
+      modalBackground.style.display = 'none'; // 确保新建日记模态框隐藏
+      detailModalBackground.style.display = 'none';
+      bgImageModalBackground.style.display = 'none';
+      noteModalBackground.style.display = 'none';
+      noteDetailModalBackground.style.display = 'none';
+      currentDiaryIndex = -1; // 重置索引
+      diaryTitleInput.value = '';
+      diaryDateTimeInput.value = '';
+      diaryContentInput.value = '';
+      diaryImageInput.value = '';
+      diaryImagePreview.style.display = 'none';
+      deleteImageBtn.style.display = 'none';
+    }
+
+    // 应用背景图片
+    function applyBackground() {
+      if (bgSettings.image) {
+        bgImageContainer.style.background = `url(${bgSettings.image}) no-repeat center center`;
+        bgImageContainer.style.backgroundSize = 'cover';
+        bgImageContainer.style.opacity = bgSettings.opacity;
+      } else {
+        bgImageContainer.style.background = 'none';
+      }
+    }
+
+    // 初始化背景
+    applyBackground();
+
+    // 打开背景图片设置模态框
+    function openBgImageModal() {
+      bgImageModalBackground.style.display = 'flex';
+      bgImageInput.value = '';
+      bgOpacitySlider.value = bgSettings.opacity;
+      bgOpacityValue.textContent = bgSettings.opacity;
+      if (bgSettings.image) {
+        bgImagePreview.src = bgSettings.image;
+        bgImagePreview.style.display = 'block';
+        deleteBgImageBtn.style.display = 'inline-block';
+      } else {
+        bgImagePreview.style.display = 'none';
+        deleteBgImageBtn.style.display = 'none';
+      }
+    }
+
+    // 关闭背景图片模态框
+    function closeBgImageModal() {
+      bgImageModalBackground.style.display = 'none';
+    }
+
+    // 处理背景图片上传
+    bgImageInput.addEventListener('change', function() {
+      const file = this.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          bgSettings.image = e.target.result;
+          bgImagePreview.src = bgSettings.image;
+          bgImagePreview.style.display = 'block';
+          deleteBgImageBtn.style.display = 'inline-block';
+          applyBackground();
+        };
+        reader.readAsDataURL(file);
+      }
+    });
+
+    // 调整透明度
+    bgOpacitySlider.addEventListener('input', function() {
+      bgSettings.opacity = parseFloat(this.value);
+      bgOpacityValue.textContent = bgSettings.opacity.toFixed(1);
+      applyBackground();
+    });
+
+    // 保存背景设置
+    function saveBgSettings() {
+      localStorage.setItem('bgSettings', JSON.stringify(bgSettings));
+      closeBgImageModal();
+    }
+
+    // 删除背景图片
+    function deleteBgImage() {
+      bgSettings.image = '';
+      bgImagePreview.style.display = 'none';
+      deleteBgImageBtn.style.display = 'none';
+      bgImageInput.value = '';
+      applyBackground();
+    }
+
+    // 背景图片事件绑定
+    bgImageBtn.addEventListener('click', openBgImageModal);
+    closeBgImageModalBtn.addEventListener('click', closeBgImageModal);
+    cancelBgImageBtn.addEventListener('click', closeBgImageModal);
+    saveBgImageBtn.addEventListener('click', saveBgSettings);
+    deleteBgImageBtn.addEventListener('click', deleteBgImage);
+
+    // 日记图片处理
+    diaryImageInput.addEventListener('change', function() {
+      const file = this.files[0];
+      if (file) {
+        const reader = new FileReader();
+        reader.onload = function(e) {
+          diaryImageData = e.target.result;
+          diaryImagePreview.src = diaryImageData;
+          diaryImagePreview.style.display = "block";
+          deleteImageBtn.style.display = "inline-block";
+        };
+        reader.readAsDataURL(file);
+      } else {
+        diaryImageData = "";
+        diaryImagePreview.style.display = "none";
+        deleteImageBtn.style.display = "none";
+      }
+    });
+
+    // 删除日记图片
+    deleteImageBtn.addEventListener('click', function() {
+      diaryImageData = "";
+      diaryImageInput.value = "";
+      diaryImagePreview.style.display = "none";
+      deleteImageBtn.style.display = "none";
+    });
+
+    // 根据时间排序
+    function sortDiaryData(data) {
+      return data.sort((a, b) => new Date(b.dateTime) - new Date(a.dateTime));
+    }
+
+    // 渲染日记列表
+    function renderDiaryList() {
+      diaryList.innerHTML = '';
+      diaryData = sortDiaryData(diaryData);
+      diaryData.forEach((entry, index) => {
+        const li = document.createElement('li');
+        li.className = 'diary-item';
+        const headerDiv = document.createElement('div');
+        headerDiv.className = 'diary-header';
+        const titleSpan = document.createElement('span');
+        titleSpan.className = 'diary-title';
+        titleSpan.textContent = entry.title;
+        const timeSpan = document.createElement('span');
+        timeSpan.className = 'diary-time';
+        const dateObj = new Date(entry.dateTime);
+        const dateString = dateObj.toLocaleString('zh-CN', {
+          year: 'numeric', month: '2-digit', day: '2-digit',
+          hour: '2-digit', minute: '2-digit'
+        });
+        timeSpan.textContent = dateString;
+        headerDiv.appendChild(titleSpan);
+        headerDiv.appendChild(timeSpan);
+        const previewDiv = document.createElement('div');
+        previewDiv.className = 'diary-preview';
+        const firstLine = entry.content.split('\n')[0];
+        previewDiv.textContent = firstLine;
+        li.addEventListener('click', () => openDetailModal(index));
+        li.appendChild(headerDiv);
+        li.appendChild(previewDiv);
+        diaryList.appendChild(li);
+      });
+    }
+
+    // 打开日记对话框
+    function openModal(isEdit = false) {
+      modalBackground.style.display = 'flex';
+      diaryImageInput.value = "";
+      diaryImageData = "";
+      diaryImagePreview.style.display = "none";
+      deleteImageBtn.style.display = "none";
+      if (!isEdit) {
+        modalTitle.textContent = '新建日记';
+        currentDiaryIndex = -1;
+        diaryTitleInput.value = '';
+        diaryDateTimeInput.value = '';
+        diaryContentInput.value = '';
+        cancelBtn.style.display = 'inline-block';
+        saveBtn.textContent = '保存';
+        modalActions.style.justifyContent = "center";
+      } else {
+        modalTitle.textContent = '修改日记';
+        const entry = diaryData[currentDiaryIndex];
+        diaryTitleInput.value = entry.title;
+        const dateObj = new Date(entry.dateTime);
+        const year = dateObj.getFullYear();
+        const month = String(dateObj.getMonth() + 1).padStart(2, '0');
+        const day = String(dateObj.getDate()).padStart(2, '0');
+        const hour = String(dateObj.getHours()).padStart(2, '0');
+        const minute = String(dateObj.getMinutes()).padStart(2,0);
+        diaryDateTimeInput.value = `${year}-${month}-${day}T${hour}:${minute}`;
+        diaryContentInput.value = entry.content;
+        if (entry.image) {
+          diaryImageData = entry.image;
+          diaryImagePreview.src = diaryImageData;
+          diaryImagePreview.style.display = "block";
+          deleteImageBtn.style.display = "inline-block";
+        }
+        cancelBtn.style.display = 'none';
+        saveBtn.textContent = '确定';
+        modalActions.style.justifyContent = "flex-start";
+      }
+    }
+
+    // 关闭日记对话框
+    function closeModal() {
+      modalBackground.style.display = 'none';
+    }
+
+    // 保存日记
+    function saveDiary() {
+      const title = diaryTitleInput.value.trim();
+      const dateTime = diaryDateTimeInput.value;
+      const content = diaryContentInput.value.trim();
+      if (!title || !dateTime || !content) {
+        alert('请填写完整的日记信息！');
+        return;
+      }
+      const entryData = {
+        title,
+        dateTime,
+        content,
+        image: diaryImageData
+      };
+      if (currentDiaryIndex === -1) {
+        diaryData.push(entryData);
+      } else {
+        diaryData[currentDiaryIndex] = entryData;
+      }
+      localStorage.setItem('myDiary', JSON.stringify(diaryData));
+      renderDiaryList();
+      closeModal();
+    }
+
+    // 打开日记详情
+    function openDetailModal(index) {
+      currentDiaryIndex = index;
+      const entry = diaryData[index];
+      detailTitle.textContent = entry.title;
+      const dateObj = new Date(entry.dateTime);
+      const dateString = dateObj.toLocaleString('zh-CN', {
+        year: 'numeric', month: '2-digit', day: '2-digit',
+        hour: '2-digit', minute: '2-digit'
+      });
+      detailTime.textContent = dateString;
+      detailContent.textContent = entry.content;
+      if (entry.image) {
+        detailImage.src = entry.image;
+        detailImage.style.display = "block";
+      } else {
+        detailImage.style.display = "none";
+      }
+      detailModalBackground.style.display = 'flex';
+    }
+
+    // 关闭日记详情
+    function closeDetailModal() {
+      detailModalBackground.style.display = 'none';
+    }
+
+    // 删除日记
+    function deleteDiary() {
+      if (currentDiaryIndex === -1) return;
+      if (!confirm('确认要删除这篇日记吗？')) return;
+      diaryData.splice(currentDiaryIndex, 1);
+      localStorage.setItem('myDiary', JSON.stringify(diaryData));
+      closeDetailModal();
+      renderDiaryList();
+    }
+
+    // 修改日记
+    function editDiary() {
+      if (currentDiaryIndex === -1) return;
+      closeDetailModal();
+      openModal(true);
+    }
+
+    // 导出日记
+    function exportDiaryData() {
+      const dataStr = JSON.stringify(diaryData, null, 2);
+      const blob = new Blob([dataStr], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "diary_backup.json";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    // 导入日记
+    function importDiaryData(file) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const importedData = JSON.parse(e.target.result);
+          if (Array.isArray(importedData)) {
+            diaryData = importedData;
+            localStorage.setItem('myDiary', JSON.stringify(diaryData));
+            renderDiaryList();
+            alert("导入成功！");
+          } else {
+            alert("文件格式不正确！");
+          }
+        } catch (error) {
+          alert("导入失败，文件格式错误！");
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    // 日记事件绑定
+    addButton.addEventListener('click', () => openModal(false));
+    closeModalBtn.addEventListener('click', closeModal);
+    cancelBtn.addEventListener('click', closeModal);
+    saveBtn.addEventListener('click', saveDiary);
+    closeDetailModalBtn.addEventListener('click', closeDetailModal);
+    editBtn.addEventListener('click', editDiary);
+    deleteBtn.addEventListener('click', deleteDiary);
+    exportBtn.addEventListener('click', exportDiaryData);
+    importBtn.addEventListener('click', () => importFile.click());
+    importFile.addEventListener('change', function() {
+      if (this.files && this.files[0]) {
+        importDiaryData(this.files[0]);
+      }
+    });
+
+    /****************** 便签部分 ******************/
+    const notesTbody = document.getElementById('notesTbody');
+    const addNoteBtn = document.getElementById('addNoteBtn');
+    const exportNotesBtn = document.getElementById('exportNotesBtn');
+    const importNotesBtn = document.getElementById('importNotesBtn');
+    const importNotesFile = document.getElementById('importNotesFile');
+
+    // 便签编辑弹窗
+    const noteModalBackground = document.getElementById('noteModalBackground');
+    const noteModal = document.getElementById('noteModal');
+    const closeNoteModalBtn = document.getElementById('closeNoteModalBtn');
+    const noteModalTitle = document.getElementById('noteModalTitle');
+    const noteTitleInput = document.getElementById('noteTitle');
+    const noteContentInput = document.getElementById('noteContent');
+    const cancelNoteBtn = document.getElementById('cancelNoteBtn');
+    const saveNoteBtn = document.getElementById('saveNoteBtn');
+
+    // 便签详情弹窗
+    const noteDetailModalBackground = document.getElementById('noteDetailModalBackground');
+    const noteDetailModal = document.getElementById('noteDetailModal');
+    const closeNoteDetailModalBtn = document.getElementById('closeNoteDetailModalBtn');
+    const noteDetailTitle = document.getElementById('noteDetailTitle');
+    const noteDetailContent = document.getElementById('noteDetailContent');
+    const editNoteBtn = document.getElementById('editNoteBtn');
+    const deleteNoteBtn = document.getElementById('deleteNoteBtn');
+
+    let notesData = JSON.parse(localStorage.getItem('myNotes')) || [];
+    let currentNoteIndex = -1;
+
+    function renderNotes() {
+      notesTbody.innerHTML = "";
+      notesData.forEach((note, index) => {
+        const tr = document.createElement('tr');
+        const tdTitle = document.createElement('td');
+        tdTitle.textContent = note.title || "（无标题）";
+        tr.addEventListener('click', () => openNoteDetailModal(index));
+        tr.appendChild(tdTitle);
+        notesTbody.appendChild(tr);
+      });
+    }
+
+    function openNoteDetailModal(index) {
+      currentNoteIndex = index;
+      const note = notesData[index];
+      noteDetailTitle.textContent = note.title || "（无标题）";
+      noteDetailContent.textContent = note.content || "";
+      noteDetailModalBackground.style.display = 'flex';
+    }
+
+    function closeNoteDetailModal() {
+      noteDetailModalBackground.style.display = 'none';
+    }
+
+    function deleteNote() {
+      if (currentNoteIndex === -1) return;
+      if (!confirm("确认要删除这条便签吗？")) return;
+      notesData.splice(currentNoteIndex, 1);
+      localStorage.setItem('myNotes', JSON.stringify(notesData));
+      closeNoteDetailModal();
+      renderNotes();
+    }
+
+    function editNote() {
+      if (currentNoteIndex === -1) return;
+      closeNoteDetailModal();
+      openNoteModal(true, currentNoteIndex);
+    }
+
+    function openNoteModal(isEdit, index = -1) {
+      noteModalBackground.style.display = 'flex';
+      if (!isEdit) {
+        noteModalTitle.textContent = "新增便签";
+        currentNoteIndex = -1;
+        noteTitleInput.value = "";
+        noteContentInput.value = "";
+      } else {
+        noteModalTitle.textContent = "编辑便签";
+        currentNoteIndex = index;
+        const note = notesData[index];
+        noteTitleInput.value = note.title;
+        noteContentInput.value = note.content;
+      }
+    }
+
+    function closeNoteModal() {
+      noteModalBackground.style.display = 'none';
+    }
+
+    function saveNote() {
+      const title = noteTitleInput.value.trim();
+      const content = noteContentInput.value.trim();
+      if (!title) {
+        alert("请至少填写便签标题！");
+        return;
+      }
+      if (currentNoteIndex === -1) {
+        notesData.push({ title, content });
+      } else {
+        notesData[currentNoteIndex] = { title, content };
+      }
+      localStorage.setItem('myNotes', JSON.stringify(notesData));
+      renderNotes();
+      closeNoteModal();
+    }
+
+    function exportNotes() {
+      const dataStr = JSON.stringify(notesData, null, 2);
+      const blob = new Blob([dataStr], { type: "application/json" });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement("a");
+      a.href = url;
+      a.download = "notes_backup.json";
+      a.click();
+      URL.revokeObjectURL(url);
+    }
+
+    function importNotes(file) {
+      const reader = new FileReader();
+      reader.onload = function(e) {
+        try {
+          const imported = JSON.parse(e.target.result);
+          if (Array.isArray(imported)) {
+            notesData = imported;
+            localStorage.setItem('myNotes', JSON.stringify(notesData));
+            renderNotes();
+            alert("便签导入成功！");
+          } else {
+            alert("文件格式不正确！");
+          }
+        } catch (error) {
+          alert("导入失败，文件格式错误！");
+        }
+      };
+      reader.readAsText(file);
+    }
+
+    addNoteBtn.addEventListener('click', () => openNoteModal(false));
+    exportNotesBtn.addEventListener('click', exportNotes);
+    importNotesBtn.addEventListener('click', () => importNotesFile.click());
+    importNotesFile.addEventListener('change', function() {
+      if (this.files && this.files[0]) {
+        importNotes(this.files[0]);
+      }
+    });
+    closeNoteModalBtn.addEventListener('click', closeNoteModal);
+    cancelNoteBtn.addEventListener('click', closeNoteModal);
+    saveNoteBtn.addEventListener('click', saveNote);
+    closeNoteDetailModalBtn.addEventListener('click', closeNoteDetailModal);
+    editNoteBtn.addEventListener('click', editNote);
+    deleteNoteBtn.addEventListener('click', deleteNote);
+
+    // 初始化页面并渲染
+    initializePage();
+    renderDiaryList();
+    renderNotes();
+  </script>
+</body>
+</html>
